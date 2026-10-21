@@ -1,0 +1,14 @@
+# Secrets and login data: never upload these
+.env
+session/
+node_modules/
+
+# Data the bot creates while running
+data/away.json
+data/agent.json
+data/verification.json
+data/contactNames.json
+data/store.json
+tmp/
+temp/
+*.log

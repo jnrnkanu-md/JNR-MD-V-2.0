@@ -1,0 +1,39 @@
+{
+  "name": "JNR-MD",
+  "description": "A powerful, feature-rich WhatsApp user bot built with the Baileys library.",
+  "keywords": ["whatsapp", "bot", "baileys", "joker", "multi-device", "js"],
+  "logo": "https://i.postimg.cc/hPz35s3c/menu1.jpg",
+  "repository": "https://github.com/jnrnkanu-md/JNR-MD",
+  "success_url": "/",
+  "stack": "container",
+  "env": {
+    "SESSION_ID": {
+      "description": "Put your Jnr-Md pairing session credentials or session ID folder here.",
+      "required": true,
+      "value": ""
+    },
+    "OWNER_NUMBER": {
+      "description": "Your main WhatsApp number with country code. Do not add '+' or '-' spaces.",
+      "required": true,
+      "value": "2347086057694"
+    }
+  },
+  "formation": {
+    "worker": {
+      "quantity": 1,
+      "size": "eco"
+    }
+  },
+  "addons": [],
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    },
+    {
+      "url": "https://github.com/jnrnkanu-md/heroku-buildpack-ffmpeg-static.git"
+    },
+    {
+      "url": "https://github.com/clhuang/heroku-buildpack-webp.git"
+    }
+  ]
+}
