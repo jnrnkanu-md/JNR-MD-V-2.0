@@ -1,20 +1,20 @@
 <div align="center">
 
-<img src="assets/bot_image.jpg" alt="JNR-MD V-2.0" width="320"/>
+<img src="assets/bot_image.jpg" alt="JNR-MD-V-2.0-V-2.0 V-2.0" width="320"/>
 
-# 🫧 JNR-MD V-2.0 🔥
+#  JNR-MD-V-2.0-V-2.0 V-2.0 🔥
 
 ### Multi-Device WhatsApp Bot · Group Management · AI · Downloads · Business Assistant
 
-<a href="https://github.com/jnrnkanu-md/JNR-MD/fork"><img src="https://img.shields.io/badge/Fork-Repository-6c3fc4?style=for-the-badge&logo=github" alt="Fork"/></a>
+<a href="https://github.com/jnrnkanu-md/JNR-MD-V-2.0-V-2.0-V-2.0/fork"><img src="https://img.shields.io/badge/Fork-Repository-6c3fc4?style=for-the-badge&logo=github" alt="Fork"/></a>
 <a href="https://whatsapp.com/channel/0029VbCxwJeEgGfFhMx4zg3q"><img src="https://img.shields.io/badge/Join-WhatsApp%20Channel-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Join the channel"/></a>
 
 <img src="https://img.shields.io/badge/version-V--2.0-6c3fc4?style=flat-square" alt="Version"/>
 <img src="https://img.shields.io/badge/node-%E2%89%A5%2018-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node"/>
 <img src="https://img.shields.io/badge/library-Baileys-0b5fff?style=flat-square" alt="Baileys"/>
 <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License"/>
-<img src="https://img.shields.io/github/stars/jnrnkanu-md/JNR-MD?style=flat-square&label=stars" alt="Stars"/>
-<img src="https://img.shields.io/github/forks/jnrnkanu-md/JNR-MD?style=flat-square&label=forks" alt="Forks"/>
+<img src="https://img.shields.io/github/stars/jnrnkanu-md/JNR-MD-V-2.0-V-2.0?style=flat-square&label=stars" alt="Stars"/>
+<img src="https://img.shields.io/github/forks/jnrnkanu-md/JNR-MD-V-2.0-V-2.0?style=flat-square&label=forks" alt="Forks"/>
 
 **Made by Jnr Nkanu Concepts**
 
@@ -55,8 +55,8 @@
 ### Install and run
 
 ```bash
-git clone https://github.com/jnrnkanu-md/JNR-MD.git
-cd JNR-MD
+git clone https://github.com/jnrnkanu-md/JNR-MD-V-2.0-V-2.0.git
+cd JNR-MD-V-2.0-V-2.0
 npm install
 npm start
 ```
@@ -179,7 +179,7 @@ The downloaders use free public servers and try several of them in turn. If one 
 ## 🗂️ Project structure
 
 ```text
-JNR-MD/
+JNR-MD-V-2.0-V-2.0/
 ├── index.js        # start file: connects to WhatsApp
 ├── main.js         # reads every message and runs commands
 ├── settings.js     # owner, bot name, prefix, version
@@ -213,7 +213,7 @@ JNR-MD/
 
 </div>
 
-If this project helps you, give it a ⭐ on [GitHub](https://github.com/jnrnkanu-md/JNR-MD). Ideas and bug reports are welcome on the [issues page](https://github.com/jnrnkanu-md/JNR-MD/issues).
+If this project helps you, give it a ⭐ on [GitHub](https://github.com/jnrnkanu-md/JNR-MD-V-2.0-V-2.0). Ideas and bug reports are welcome on the [issues page](https://github.com/jnrnkanu-md/JNR-MD-V-2.0-V-2.0/issues).
 
 **Developer:** Nkanu Onnoghen Nkanu · Instagram: Jnr Nkanu Concepts
 
