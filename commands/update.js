@@ -50,7 +50,7 @@ function downloadFile(url, dest, visited = new Set()) {
             const client = useHttps ? require('https') : require('http');
             const req = client.get(url, {
                 headers: {
-                    'User-Agent': 'JNR-MD-Updater/1.0',
+                    'User-Agent': 'JNR-MD-V-2.0-V-2.0-V-2.0-Updater/1.0',
                     'Accept': '*/*'
                 }
             }, res => {
@@ -111,7 +111,7 @@ function copyRecursive(src, dest, ignore = [], relative = '', outList = []) {
 }
 
 async function updateViaZip(sock, chatId, message, zipOverride) {
-    const zipUrl = (zipOverride || settings.updateZipUrl || process.env.UPDATE_ZIP_URL || 'https://github.com/jnrnkanu-md/JNR-MD/archive/refs/heads/main.zip').trim();
+    const zipUrl = (zipOverride || settings.updateZipUrl || process.env.UPDATE_ZIP_URL || 'https://github.com/jnrnkanu-md/JNR-MD-V-2.0-V-2.0-V-2.0-V-2.0/archive/refs/heads/main.zip').trim();
     
     const tmpDir = path.join(process.cwd(), 'tmp');
     if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
@@ -174,7 +174,7 @@ async function updateCommand(sock, chatId, message, zipOverride) {
         return;
     }
     try {
-        await sock.sendMessage(chatId, { text: '🔄 Updating JNR-MD, please wait…' }, { quoted: message });
+        await sock.sendMessage(chatId, { text: '🔄 Updating JNR-MD-V-2.0-V-2.0-V-2.0, please wait…' }, { quoted: message });
         if (await hasGitRepo()) {
             const { oldRev, newRev, alreadyUpToDate, commits, files } = await updateViaGit();
             console.log('[update] Git update applied.');
