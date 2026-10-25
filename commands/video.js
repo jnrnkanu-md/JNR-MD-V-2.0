@@ -12,14 +12,25 @@ const os = require('os');
  * (or its key has expired) the next one is used automatically.
  */
 
-const MEGAN_API_KEY = 'megan_ee570c538efeae230e2c8a8361b81707';
 const enc = encodeURIComponent;
 
+// Free servers die often (the old megan / siputzx / izumi ones are gone), so several are listed.
+// They are tried one after another; the first that gives a real video wins. Run .dltest to see which are alive.
 const PROVIDERS = [
-    { name: 'megan',   url: u => `https://apis.megan.qzz.io/download/hd?api_key=${MEGAN_API_KEY}&url=${enc(u)}` },
-    { name: 'siputzx', url: u => `https://api.siputzx.my.id/api/d/ytmp4?url=${enc(u)}` },
-    { name: 'izumi',   url: u => `https://izumiiiiiiii.dpdns.org/downloader/youtube?url=${enc(u)}&format=720` }
+    { name: 'knight',   url: u => `https://knightbotapi.stream/api/ytmp4?apikey=knight&query=${enc(u)}` },
+    { name: 'gifted',   url: u => `https://api.giftedtech.co.ke/api/download/ytmp4?apikey=gifted&url=${enc(u)}` },
+    { name: 'cyril',    url: u => `https://apis.davidcyril.name.ng/download/ytmp4?url=${enc(u)}` },
+    { name: 'siputzx',  url: u => `https://api.siputzx.my.id/api/dl/youtube/mp4?url=${enc(u)}` }
 ];
+
+// Last resort: the yt-dlp program, if it is installed on the host (it needs no website API)
+const { execFile } = require('child_process');
+function ytdlpDownload(target, filePath) {
+    return new Promise((resolve, reject) => {
+        execFile('yt-dlp', ['--no-playlist', '--max-filesize', '60M', '-f', 'best[height<=720][ext=mp4]/best[height<=720]/best', '--merge-output-format', 'mp4', '-o', filePath, target],
+            { timeout: 240000 }, (err) => (err ? reject(new Error(err.code === 'ENOENT' ? 'yt-dlp is not installed' : String(err.message).slice(0, 120))) : resolve()));
+    });
+}
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 const LINK_KEYS = ['proxyUrl', 'downloadUrl', 'download_url', 'dl', 'download', 'mp4', 'video', 'url', 'link'];
@@ -141,6 +152,20 @@ async function videoCommand(sock, chatId, message) {
                 console.error(`[VIDEO] ${provider.name} failed: ${reason}`);
                 if (tempFilePath && fs.existsSync(tempFilePath)) { try { fs.unlinkSync(tempFilePath); } catch {} }
                 tempFilePath = null;
+            }
+        }
+
+        if (!tempFilePath) {
+            // every website server failed: try yt-dlp on this host
+            const safe = String(title).replace(/[^a-zA-Z0-9]/g, '_').substring(0, 40);
+            const out = path.join(os.tmpdir(), `video_${Date.now()}_${safe}.mp4`);
+            try {
+                await ytdlpDownload(targetUrl || searchQuery, out);
+                if (fs.existsSync(out) && fs.statSync(out).size > 20 * 1024) { tempFilePath = out; fileSize = fs.statSync(out).size; failures.length = 0; }
+            } catch (err) {
+                failures.push(`yt-dlp: ${err.message}`);
+                console.error(`[VIDEO] yt-dlp failed: ${err.message}`);
+                try { fs.unlinkSync(out); } catch { /* nothing to remove */ }
             }
         }
 

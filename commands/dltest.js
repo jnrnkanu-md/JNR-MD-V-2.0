@@ -15,8 +15,10 @@ const TT = 'https://www.tiktok.com/@tiktok/video/7106594312292453675';
 const SERVERS = [
     ['Song  · knightbotapi', `https://knightbotapi.stream/api/ytmp3?apikey=knight&query=${enc('burna boy last last')}`, j => j && j.success && j.download],
     ['Song  · davidcyril', `https://apis.davidcyril.name.ng/play?query=${enc('burna boy last last')}`, j => j && j.status && j.result && j.result.download_url],
-    ['Video · siputzx', `https://api.siputzx.my.id/api/d/ytmp4?url=${enc(YT)}`, j => j && (j.status || j.data)],
-    ['Video · izumi', `https://izumiiiiiiii.dpdns.org/downloader/youtube?url=${enc(YT)}&format=720`, j => j && (j.result || j.status)],
+    ['Video · knight', `https://knightbotapi.stream/api/ytmp4?apikey=knight&query=${enc(YT)}`, j => j && (j.success || j.download)],
+    ['Video · gifted', `https://api.giftedtech.co.ke/api/download/ytmp4?apikey=gifted&url=${enc(YT)}`, j => j && (j.success || j.result)],
+    ['Video · cyril', `https://apis.davidcyril.name.ng/download/ytmp4?url=${enc(YT)}`, j => j && (j.status || j.result)],
+    ['Video · siputzx', `https://api.siputzx.my.id/api/dl/youtube/mp4?url=${enc(YT)}`, j => j && (j.status || j.data)],
     ['YouTube search', `https://www.youtube.com/results?search_query=${enc('last last')}`, null],
     ['TikTok · tikwm', `https://www.tikwm.com/api/?url=${enc(TT)}`, j => j && j.code === 0],
     ['TikTok · tiklydown', `https://api.tiklydown.eu.org/api/download/v3?url=${enc(TT)}`, j => j && (j.result || j.video)],
@@ -37,6 +39,7 @@ async function probe([name, url, good]) {
         return `❌ ${name}: OFFLINE (${e.code || e.message})`;
     }
 }
+const ytdlp = () => new Promise(r => execFile('yt-dlp', ['--version'], { timeout: 8000 }, e => r(!e)));
 const ffmpeg = () => new Promise(r => execFile('ffmpeg', ['-version'], { timeout: 8000 }, e => r(!e)));
 
 module.exports = async function dltestCommand(sock, chatId, message) {
@@ -47,9 +50,11 @@ module.exports = async function dltestCommand(sock, chatId, message) {
     await sock.sendMessage(chatId, { text: '🔎 Checking the download servers, this takes about 15 seconds...' }, { quoted: message });
     const lines = await Promise.all(SERVERS.map(probe));
     const hasFfmpeg = await ffmpeg();
+    const hasYtdlp = await ytdlp();
     const up = lines.filter(l => l.startsWith('✅')).length;
     const text = `🧪 ${style.bold('DOWNLOAD SERVER CHECK')}\n━━━━━━━━━━━━━━━━━━\n${lines.join('\n')}\n` +
-        `${hasFfmpeg ? '✅' : '❌'} ffmpeg: ${hasFfmpeg ? 'installed' : 'missing (some songs cannot be converted)'}\n━━━━━━━━━━━━━━━━━━\n` +
+        `${hasFfmpeg ? '✅' : '❌'} ffmpeg: ${hasFfmpeg ? 'installed' : 'missing (some songs cannot be converted)'}\n` +
+        `${hasYtdlp ? '✅' : '➖'} yt-dlp: ${hasYtdlp ? 'installed (video backup ready)' : 'not installed (optional video backup)'}\n━━━━━━━━━━━━━━━━━━\n` +
         `${up} of ${SERVERS.length} servers are working.\n` +
         (up === 0 ? 'Every server failed: this host may have no internet, or the whole list is down. Send this message to your developer.' :
             'A server marked DOWN, OFFLINE or BLOCKED is the problem, not the bot. The bot already switches to the next working one.');
