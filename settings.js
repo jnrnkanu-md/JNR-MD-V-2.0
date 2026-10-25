@@ -12,7 +12,7 @@ const settings = {
   storeWriteInterval: 10000,
   description: "This is a bot for managing group commands and automating tasks.",
   version: "V-2.0",
-  updateZipUrl: "https://github.com/jnrnkanu-md/JNR-MD/archive/refs/heads/main.zip",
+  updateZipUrl: "https://github.com/jnrnkanu-md/JNR-MD-V-2.0/archive/refs/heads/main.zip",
 };
 
 // 👇 ADD THIS LINE HERE (Outside the curly braces)

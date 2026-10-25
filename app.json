@@ -3,7 +3,7 @@
   "description": "A powerful, feature-rich WhatsApp user bot built with the Baileys library.",
   "keywords": ["whatsapp", "bot", "baileys", "joker", "multi-device", "js"],
   "logo": "https://i.postimg.cc/hPz35s3c/menu1.jpg",
-  "repository": "https://github.com/jnrnkanu-md/JNR-MD",
+  "repository": "https://github.com/jnrnkanu-md/JNR-MD-V-2.0",
   "success_url": "/",
   "stack": "container",
   "env": {

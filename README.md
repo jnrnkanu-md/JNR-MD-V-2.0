@@ -2,12 +2,12 @@
 
 <img src="assets/bot_image.jpg" alt="JNR-MD V-2.0" width="300"/>
 
-#  JNR-MD V-2.0 🔥
+# 🫧 JNR-MD V-2.0 🔥
 
 **Multi-device WhatsApp bot · Group management · AI · Downloads · Business assistant**
 
 <a href="https://github.com/jnrnkanu-md/JNR-MD-V-2.0/fork"><img src="https://img.shields.io/badge/⑂%20Fork%20this%20repo-6c3fc4?style=for-the-badge&logo=github&logoColor=white" alt="Fork"/></a>
-<a href="https://whatsapp.com/channel/0029Vb8N9RC7YSd63dWo7C2z"><img src="https://img.shields.io/badge/Join%20the%20channel-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Channel"/></a>
+<a href="https://whatsapp.com/channel/0029VbCxwJeEgGfFhMx4zg3q"><img src="https://img.shields.io/badge/Join%20the%20channel-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="Channel"/></a>
 <a href="https://github.com/jnrnkanu-md/JNR-MD-V-2.0/issues/new"><img src="https://img.shields.io/badge/Report%20a%20bug-d73a4a?style=for-the-badge&logo=github&logoColor=white" alt="Issues"/></a>
 
 </div>
