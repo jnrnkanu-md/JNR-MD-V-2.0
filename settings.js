@@ -9,7 +9,7 @@ const settings = {
   commandMode: "public",
   maxMessageAgeSeconds: 90, // messages older than this are ignored (stops old commands running again after a restart)
   maxStoreMessages: 20, 
-  storeWriteInterval: 10000,
+  storeWriteInterval: 30000,
   description: "This is a bot for managing group commands and automating tasks.",
   version: "V-2.0",
   updateZipUrl: "https://github.com/jnrnkanu-md/JNR-MD-V-2.0/archive/refs/heads/main.zip",

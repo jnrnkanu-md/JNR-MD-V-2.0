@@ -48,22 +48,25 @@ const store = require('./lib/lightweight_store')
 // Initialize store
 store.readFromFile()
 const settings = require('./settings')
-setInterval(() => store.writeToFile(), settings.storeWriteInterval || 10000)
+setInterval(() => store.writeToFile(), settings.storeWriteInterval || 30000)
 
-// Memory management
-setInterval(() => {
-    if (global.gc) {
-        global.gc()
-    }
-}, 60_000)
+// Memory management (tuned for small hosts, e.g. 300 MB RAM)
+try {
+    require('v8').setFlagsFromString('--expose-gc')
+    require('v8').setFlagsFromString('--max-old-space-size=180')
+    if (!global.gc) global.gc = require('vm').runInNewContext('gc')
+} catch {}
+setInterval(() => { try { if (global.gc) global.gc() } catch {} }, 30_000)
 
+const LIMIT_MB = Number(process.env.RAM_LIMIT_MB) || 290
 setInterval(() => {
     const used = process.memoryUsage().rss / 1024 / 1024
-    if (used > 400) {
-        console.log('⚠️ RAM too high (>400MB), restarting bot...')
+    if (used > LIMIT_MB - 25 && global.gc) { try { global.gc() } catch {} }
+    if (process.memoryUsage().rss / 1024 / 1024 > LIMIT_MB) {
+        console.log(`⚠️ RAM too high (>${LIMIT_MB}MB), restarting bot...`)
         process.exit(1)
     }
-}, 30_000)
+}, 20_000)
 
 let phoneNumber = "911234567890"
 let owner = JSON.parse(fs.readFileSync('./data/owner.json'))
@@ -143,7 +146,17 @@ async function startXeonBotInc() {
         store.bind(XeonBotInc.ev)
 
         // MAIN MESSAGE LOOP (With Enhanced Activities Console Logger)
-        XeonBotInc.ev.on('messages.upsert', async chatUpdate => {
+        const onUpsert = async chatUpdate => {
+            // WhatsApp often delivers several messages (or statuses) in ONE update. Handle every one,
+            // one after another, instead of only the first.
+            if (chatUpdate.messages && chatUpdate.messages.length > 1) {
+                const rest = chatUpdate.messages.slice(1)
+                const type = chatUpdate.type
+                chatUpdate = { ...chatUpdate, messages: [chatUpdate.messages[0]] }
+                setImmediate(async () => {
+                    for (const m of rest) { try { await onUpsert({ type, messages: [m] }) } catch (e) { console.error('Error in batched message:', e.message) } }
+                })
+            }
             try {
                 const mek = chatUpdate.messages[0]
                 if (!mek || !mek.message) return
@@ -214,14 +227,18 @@ async function startXeonBotInc() {
                 }
 
                 try {
+                    const _t0 = Date.now()
                     await handleMessages(XeonBotInc, chatUpdate, true)
+                    const _took = Date.now() - _t0
+                    if (_took > 2000) console.log(chalk.yellow(`🐢 That message took ${_took} ms to handle (slow: usually a download or an AI/network call, not the bot itself)`))
                 } catch (err) {
                     console.error("Error in handleMessages:", err)
                 }
             } catch (err) {
                 console.error("Error in messages.upsert:", err)
             }
-        })
+        }
+        XeonBotInc.ev.on('messages.upsert', onUpsert)
 
         XeonBotInc.decodeJid = (jid) => {
             if (!jid) return jid

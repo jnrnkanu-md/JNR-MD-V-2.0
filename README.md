@@ -106,12 +106,14 @@ Open `.env` in the main folder and paste your keys after the `=`:
 
 ```env
 GROQ_API_KEY=
+GEMINI_API_KEY=
 FAL_KEY=
 ```
 
 | Key | Get it at | Powers |
 |---|---|---|
 | `GROQ_API_KEY` | [console.groq.com/keys](https://console.groq.com/keys) | `.ai`, `.chatbot`, `.agent`, `.stt`, away mode, safety scanner |
+| `GEMINI_API_KEY` | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) (free) | Backup for the AI when Groq blocks your host (optional) |
 | `FAL_KEY` | [fal.ai](https://fal.ai) | `.sora` text to video |
 
 Restart after saving. Never upload a filled-in `.env` to GitHub.
