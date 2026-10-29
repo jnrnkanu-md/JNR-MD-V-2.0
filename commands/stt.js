@@ -3,7 +3,7 @@ const path = require('path');
 const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
 const settings = require('../settings');
 const isOwnerOrSudo = require('../lib/isOwner');
-const { listModelIds, hasKey, getKey } = require('../lib/groq');
+const { listModelIds, hasGroqKey: hasKey, getKey, isBlocked } = require('../lib/groq');
 const style = require('../lib/style');
 
 /**
@@ -111,7 +111,9 @@ function explain(err) {
     if (err.code === 'NO_WHISPER') return err.translate
         ? '❌ Translation needs the *whisper-large-v3* model, which your Groq key cannot use. Use *.stt* to get the text in the original language.'
         : '❌ Your Groq key cannot use a speech-to-text (Whisper) model. In the Groq console, open your project settings and allow *whisper-large-v3-turbo*, or create a new key in your default project.';
-    if (err.status === 401 || err.status === 403) return '❌ The AI key is invalid or expired. Check *GROQ_API_KEY* in your .env file.';
+    if (isBlocked(err)) return '⚠️ Groq is refusing connections from this bot\'s host network (not a key problem). Voice-to-text needs Groq, so it will work again on a host that Groq accepts.';
+    if (err.status === 401) return '❌ The Groq key was rejected. Check *GROQ_API_KEY* in your .env file.';
+    if (err.status === 403) return '❌ Groq refused the request (403). Check that your key and project are allowed to use speech-to-text.';
     if (err.status === 404) return '❌ That speech model is not available for your Groq key. Allow *whisper-large-v3-turbo* in the Groq console.';
     if (err.status === 413) return '❌ That audio is too large. Send a shorter one (under about 24 MB).';
     if (err.status === 429) return '⏳ The speech service is busy right now. Please try again in a minute.';

@@ -33,8 +33,13 @@ async function updateViaGit() {
     const alreadyUpToDate = oldRev === newRev;
     const commits = alreadyUpToDate ? '' : await run(`git log --pretty=format:"%h %s (%an)" ${oldRev}..${newRev}`).catch(() => '');
     const files = alreadyUpToDate ? '' : await run(`git diff --name-status ${oldRev} ${newRev}`).catch(() => '');
+    // keep your live settings: remember the data folder, update, then put it back
+    const dataDir = path.join(process.cwd(), 'data');
+    const saved = [];
+    try { for (const f of fs.readdirSync(dataDir)) { const fp = path.join(dataDir, f); if (fs.statSync(fp).isFile()) saved.push([f, fs.readFileSync(fp)]); } } catch { /* no data folder */ }
     await run(`git reset --hard ${newRev}`);
     await run('git clean -fd');
+    try { fs.mkdirSync(dataDir, { recursive: true }); for (const [f, buf] of saved) fs.writeFileSync(path.join(dataDir, f), buf); } catch (e) { console.error('Could not restore data folder:', e.message); }
     return { oldRev, newRev, alreadyUpToDate, commits, files };
 }
 
