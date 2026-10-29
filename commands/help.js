@@ -247,15 +247,62 @@ function allMenuParts() {
     return parts;
 }
 
+/* ---- menu pictures: downloaded ONCE, kept in memory and on disk ----
+   Sending a picture by link makes WhatsApp's library download it again on every .menu, which is slow
+   (or fails) on a slow host and drops the menu to plain text. Now the first .menu fetches it (max 6 s),
+   every later .menu is instant, and if the picture site is unreachable the local bot image is used. */
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const axios = require('axios');
+const CACHE_DIR = path.join(__dirname, '../data/cache');
+const LOCAL_FALLBACK = path.join(__dirname, '../assets/bot_image.jpg');
+const memo = new Map();       // url -> Buffer
+const pending = new Map();    // url -> Promise
+const fileFor = (url) => path.join(CACHE_DIR, crypto.createHash('md5').update(url).digest('hex') + '.img');
+
+function cached(url) {
+    if (memo.has(url)) return memo.get(url);
+    try { const b = fs.readFileSync(fileFor(url)); if (b.length > 2000) { memo.set(url, b); return b; } } catch { /* not on disk yet */ }
+    return null;
+}
+function download(url) {
+    if (pending.has(url)) return pending.get(url);
+    const p = axios.get(url, { responseType: 'arraybuffer', timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } })
+        .then(res => {
+            const b = Buffer.from(res.data);
+            if (b.length < 2000 || b[0] === 0x3c) throw new Error('not a picture');
+            memo.set(url, b);
+            try { fs.mkdirSync(CACHE_DIR, { recursive: true }); fs.writeFileSync(fileFor(url), b); } catch { /* memory copy is enough */ }
+            return b;
+        })
+        .catch(() => null)
+        .finally(() => pending.delete(url));
+    pending.set(url, p);
+    return p;
+}
+async function pictureFor(url) {
+    const hit = cached(url);
+    if (hit) return hit;
+    const got = await Promise.race([download(url), new Promise(r => setTimeout(() => r(null), 6000))]);
+    if (got) return got;
+    try { return fs.readFileSync(LOCAL_FALLBACK); } catch { return null; }
+}
+// warm the cache shortly after start so even the first .menu is instant
+setTimeout(() => { download(BIO_IMAGE); download(MENU_IMAGE); }, 4000).unref?.();
+
 async function sendImage(sock, chatId, message, image, caption, withChannel) {
-    await sock.sendMessage(chatId, { image: { url: image }, caption, ...(withChannel ? channelInfo : {}) }, { quoted: message });
+    const picture = await pictureFor(image);
+    const extra = withChannel ? channelInfo : {};
+    if (picture) return sock.sendMessage(chatId, { image: picture, caption, ...extra }, { quoted: message });
+    return sock.sendMessage(chatId, { text: caption, ...extra }, { quoted: message });
 }
 
 async function helpCommand(sock, chatId, message) {
     try {
         await sock.sendMessage(chatId, { react: { text: '🤖', key: message.key } });
         await sendImage(sock, chatId, message, BIO_IMAGE, welcomeCardText(message.pushName), false);
-        await delay(1200);
+        await delay(400);
         await sendImage(sock, chatId, message, MENU_IMAGE, mainMenuText(message.pushName), true);
     } catch (err) {
         console.error('❌ Menu Error:', err);
@@ -270,7 +317,7 @@ async function menuCommand(sock, chatId, message, key) {
             const parts = allMenuParts();
             for (let i = 0; i < parts.length; i++) {
                 await sock.sendMessage(chatId, i === 0 ? { text: parts[i], ...channelInfo } : { text: parts[i] }, i === 0 ? { quoted: message } : undefined);
-                if (i < parts.length - 1) await delay(700);
+                if (i < parts.length - 1) await delay(300);
             }
         } catch (err) {
             console.error('❌ All-menu Error:', err);

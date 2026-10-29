@@ -306,8 +306,9 @@ async function handleStatusUpdate(sock, status) {
         if (!isAutoStatusEnabled()) {
             return;
         }
+        if (status.messages?.[0]?.key?.fromMe || status.key?.fromMe) return;   // never react to your own status
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 1000 + Math.floor(Math.random() * 1500)));
 
         if (status.messages && status.messages.length > 0) {
             const msg = status.messages[0];

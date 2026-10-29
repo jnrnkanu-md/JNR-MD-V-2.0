@@ -4,22 +4,14 @@
  *
  * Needs a Groq API key in the .env file:  GROQ_API_KEY=your_key
  */
-const { chat, hasKey } = require('../lib/groq');
+const { chat, hasKey, explainError } = require('../lib/groq');
 
 const COMMAND_NAMES = ['ask', 'llama', 'gemini', 'ai', 'groq', 'chatgpt', 'gpt'];
 
 const SYSTEM_PROMPT = 'You are JNR-MD, a friendly and helpful WhatsApp assistant. ' +
     'Answer clearly and keep replies reasonably short. Use simple formatting that works in WhatsApp.';
 
-function explain(err) {
-    const status = err.response?.status;
-    const code = err.response?.data?.error?.code;
-    if (status === 401 || status === 403) return '❌ The AI key is invalid or expired. Check *GROQ_API_KEY* in your .env file.';
-    if (status === 404 || code === 'model_not_found') return '❌ No AI model is available for this key. In the Groq console, check that your project has access to a chat model.';
-    if (status === 429) return '⏳ The AI is busy right now (rate limit). Please try again in a minute.';
-    if (err.code === 'ECONNABORTED') return '⌛ The AI took too long to answer. Please try again.';
-    return '❌ Failed to get a response. Please try again later.';
-}
+const explain = explainError;
 
 async function aiCommand(sock, chatId, message) {
     try {
