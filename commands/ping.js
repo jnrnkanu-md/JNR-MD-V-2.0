@@ -16,7 +16,7 @@ function formatTime(seconds) {
 
 // 🟢 fast / 🟡 okay / 🔴 slow
 function quality(ms) {
-    if (ms < 250) return '🟢 Excellent';
+    if (ms < 250) return '🟢 TURBO 🚀';
     if (ms < 700) return '🟡 Good';
     return '🔴 Slow';
 }
