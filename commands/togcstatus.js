@@ -5,7 +5,7 @@ const isOwnerOrSudo = require('../lib/isOwner');
 /**
  * JNR-MD - post to WhatsApp GROUP STATUS in every group the bot is in
  *
- *  .togcstatus                 (reply to an image / video / text)  -> posts it
+ *  .togcstatus / .gcstatus                 (reply to an image / video / text)  -> posts it
  *  .togcstatus <caption>       (reply to an image / video)         -> posts it with your caption
  *  .togcstatus <text>                                              -> posts a text group status
  *  Sent as the caption of an image / video also works.

@@ -57,7 +57,7 @@ const MENUS = {
                 '.mode <public/private>', '.settings', '.update', '.sudo', '.setprefix', '.setbotname', '.setprofilename',
                 '.setmenuimage', '.setpp', '.clearsession', '.cleartmp', '.antidelete', '.antiviewonce',
                 '.autoreact / .areact', '.autostatus', '.autostatus react', '.autotyping', '.autoread', '.anticall',
-                '.pmblocker', '.mention', '.setmention', '.adminalert <on/off>', '.tostatus', '.togcstatus', '.dltest'
+                '.pmblocker', '.mention', '.setmention', '.adminalert <on/off>', '.tostatus', '.togcstatus / .gcstatus', '.dltest'
             ] },
             { title: '🌙 AWAY MODE', lines: [
                 '.away on [message]', '.away off', '.away status', '.away style on/off', '.away message <text>',
