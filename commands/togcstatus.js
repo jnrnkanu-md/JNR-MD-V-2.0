@@ -70,26 +70,42 @@ async function togcstatusCommand(sock, chatId, message) {
             kind = 'text'; caption = text;
         }
 
-        const groups = Object.keys((await sock.groupFetchAllParticipating()) || {});
-        if (!groups.length) return reply('❌ The bot is not in any group.');
-        await reply(`⏳ Posting to ${groups.length} group${groups.length > 1 ? 's' : ''}. This takes about ${Math.ceil(groups.length * 4.5 / 60)} min. I will tell you when done.`);
+        const all = Object.values((await sock.groupFetchAllParticipating()) || {});
+        const num = (j) => String(j || '').split('@')[0].split(':')[0];
+        const me = new Set([num(sock.user?.id), num(sock.user?.lid)].filter(Boolean));
+        const groups = []; const skippedLocked = []; let skippedLeft = 0;
+        for (const g of all) {
+            const mine = (g.participants || []).find(p => me.has(num(p.id)) || me.has(num(p.lid)) || me.has(num(p.phoneNumber)));
+            if (!mine) { skippedLeft++; continue; }                       // the bot is no longer in this group
+            const admin = mine.admin === 'admin' || mine.admin === 'superadmin';
+            if (g.announce && !admin) { skippedLocked.push(g.subject || g.id); continue; }   // locked group, bot is not an admin
+            groups.push(g.id);
+        }
+        if (!groups.length) return reply('❌ No group to post to.' + (skippedLocked.length ? `\n🔒 ${skippedLocked.length} locked group(s) where the bot is not an admin.` : '') + (skippedLeft ? `\n🚪 ${skippedLeft} group(s) the bot already left.` : ''));
+        await reply(`⏳ Posting to ${groups.length} group${groups.length > 1 ? 's' : ''}` + (skippedLocked.length ? ` (skipping ${skippedLocked.length} locked)` : '') + (skippedLeft ? ` (${skippedLeft} left)` : '') + `. About ${Math.ceil(groups.length * 4.5 / 60)} min.`);
 
         // Upload the media once, reuse it for every group
         let inner;
         if (kind === 'text') {
-            inner = { extendedTextMessage: { text: caption, backgroundArgb: BACKGROUNDS[Math.floor(Math.random() * BACKGROUNDS.length)], font: 2 } };
+            inner = { extendedTextMessage: { text: caption, backgroundArgb: BACKGROUNDS[Math.floor(Math.random() * BACKGROUNDS.length)], font: 2, contextInfo: { isGroupStatus: true } } };
         } else {
             const buffer = await readBuffer(source, kind);
             const prepared = await prepareWAMessageMedia({ [kind]: buffer, mimetype: kind === 'video' ? 'video/mp4' : 'image/jpeg' }, { upload: sock.waUploadToServer });
             const key = kind === 'image' ? 'imageMessage' : 'videoMessage';
-            inner = { [key]: { ...prepared[key], caption } };
+            inner = { [key]: { ...prepared[key], caption, contextInfo: { isGroupStatus: true } } };
         }
 
         let ok = 0; const failed = [];
         for (const gid of groups) {
             try {
-                const msg = generateWAMessageFromContent(gid, { groupStatusMessageV2: { message: inner } }, { userJid: sock.user.id });
-                await sock.relayMessage(gid, msg.message, { messageId: msg.key.id });
+                const msg = generateWAMessageFromContent(gid, {
+                    groupStatusMessageV2: { message: inner },
+                    messageContextInfo: { messageSecret: require('crypto').randomBytes(32) }
+                }, { userJid: sock.user.id });
+                await sock.relayMessage(gid, msg.message, {
+                    messageId: msg.key.id,
+                    additionalNodes: [{ tag: 'meta', attrs: { is_group_status: 'true', origin: 'group_status' } }]
+                });
                 ok++;
             } catch (e) {
                 failed.push(gid);
@@ -97,7 +113,7 @@ async function togcstatusCommand(sock, chatId, message) {
             }
             await sleep(GAP_MIN + Math.random() * (GAP_MAX - GAP_MIN));
         }
-        await reply(`✅ Group Status posted in ${ok}/${groups.length} groups.` + (failed.length ? `\n⚠️ ${failed.length} failed (see the console).` : ''));
+        await reply(`✅ Group Status sent to ${ok}/${groups.length} groups.` + (failed.length ? `\n⚠️ ${failed.length} failed (see the console).` : '') + (skippedLocked.length ? `\n🔒 Skipped (locked, bot not admin): ${skippedLocked.slice(0, 15).join(', ')}` : '') + '\n\nOpen one group to check that the status appears.')
     } catch (e) {
         console.error('[TOGCSTATUS]', e);
         await reply('❌ Could not post the group status: ' + (e.message || e));
