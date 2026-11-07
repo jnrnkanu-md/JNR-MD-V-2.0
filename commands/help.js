@@ -57,7 +57,7 @@ const MENUS = {
                 '.mode <public/private>', '.settings', '.update', '.sudo', '.setprefix', '.setbotname', '.setprofilename',
                 '.setmenuimage', '.setpp', '.clearsession', '.cleartmp', '.antidelete', '.antiviewonce',
                 '.autoreact / .areact', '.autostatus', '.autostatus react', '.autotyping', '.autoread', '.anticall',
-                '.pmblocker', '.mention', '.setmention', '.adminalert <on/off>', '.tostatus', '.dltest'
+                '.pmblocker', '.mention', '.setmention', '.adminalert <on/off>', '.tostatus', '.togcstatus', '.dltest'
             ] },
             { title: '🌙 AWAY MODE', lines: [
                 '.away on [message]', '.away off', '.away status', '.away style on/off', '.away message <text>',
@@ -88,7 +88,7 @@ const MENUS = {
         boxes: [{ title: '📥 DOWNLOADER', lines: [
             '.play <song name>', '.song <song name>', '.mp3 <song name>', '.ytmp3 <link>', '.music <song name>',
             '.spotify <query>', '.video <name/link>', '.yt <name/link>', '.ytmp4 <link>',
-            '.tiktok / .tt <link>', '.instagram / .ig <link>', '.igs <link>', '.igsc <link>',
+            '.tiktok / .tt <link>', '.pin <link>', '.instagram / .ig <link>', '.igs <link>', '.igsc <link>',
             '.facebook / .fb <link>', '.x / .twitter <link>', '.animedl / .adl <name>'
         ] }]
     },
