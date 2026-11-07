@@ -34,7 +34,7 @@ const MENUS = {
             { title: '🛡️ GROUP ADMIN', lines: [
                 '.ban @user', '.unban @user', '.kick @user', '.warn @user', '.warnings @user', '.mute <minutes>', '.unmute',
                 '.promote @user', '.demote @user', '.delete / .del', '.clear', '.tag', '.tagall (everyone)', '.tagnotadmin',
-                '.hidetag <text>', '.chatbot', '.antilink', '.antibadword', '.antitag', '.resetlink / .revoke',
+                '.hidetag <text>', '.chatbot', '.antilink', '.antibadword', '.antitag', '.antigcstatus', '.resetlink / .revoke',
                 '.setgname <name>', '.setgdesc <text>', '.setgpp'
             ] },
             { title: '👋 WELCOME', lines: [

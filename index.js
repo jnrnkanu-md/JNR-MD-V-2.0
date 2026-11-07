@@ -168,6 +168,9 @@ async function startXeonBotInc() {
                     return
                 }
 
+                // 🚫 Anti Group Status: delete group status posts where an admin switched it on
+                try { if (mek.key.remoteJid.endsWith('@g.us')) await require('./lib/antiGcStatus').handle(XeonBotInc, mek) } catch {}
+
                 mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
                 
                 // 📡 REAL-TIME CONSOLE ACTIVITY TRACKER
@@ -275,18 +278,30 @@ async function startXeonBotInc() {
         if (pairingCode && !XeonBotInc.authState.creds.registered) {
             if (useMobile) throw new Error('Cannot use pairing code with mobile api')
 
-            let phoneNumber = global.phoneNumber || await question(chalk.bgBlack(chalk.greenBright(`Please type your WhatsApp number 😍\nFormat: 6281376552730: `)))
-            phoneNumber = phoneNumber.replace(/[^0-9]/g, '')
+            let phoneNumber = global.phoneNumber || await question(chalk.bgBlack(chalk.greenBright(`Please type your WhatsApp number 😍\nFormat: 2348012345678 (no + or spaces): `)))
+            phoneNumber = String(phoneNumber).replace(/[^0-9]/g, '')
+            global.phoneNumber = phoneNumber   // remembered, so a reconnect never asks again
 
-            setTimeout(async () => {
+            const sock = XeonBotInc
+            const tryPair = async (attempt) => {
+                if (sock.authState.creds.registered) return
                 try {
-                    let code = await XeonBotInc.requestPairingCode(phoneNumber)
+                    let code = await sock.requestPairingCode(phoneNumber)
                     code = code?.match(/.{1,4}/g)?.join("-") || code
                     console.log(chalk.black(chalk.bgGreen(`Your Pairing Code : `)), chalk.black(chalk.white(code)))
+                    console.log('👉 WhatsApp > Linked Devices > Link with phone number instead, then type the code. It expires in about a minute.')
                 } catch (error) {
-                    console.error('Error requesting pairing code:', error)
+                    if (/Connection Closed/i.test(String(error.message))) {
+                        console.log('⚠️ Connection dropped, reconnecting and requesting a fresh code...')
+                    } else if (attempt < 4) {
+                        console.log(`⚠️ Pairing not ready (${error.message}), retrying...`)
+                        setTimeout(() => tryPair(attempt + 1), 4000)
+                    } else {
+                        console.error('Error requesting pairing code:', error.message, '- restart the bot and try again.')
+                    }
                 }
-            }, 3000)
+            }
+            setTimeout(() => tryPair(0), 3000)
         }
 
         // Connection Update Handler with Big Joker Graphic Design
