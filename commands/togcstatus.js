@@ -98,10 +98,10 @@ async function togcstatusCommand(sock, chatId, message) {
         let ok = 0; const failed = [];
         for (const gid of groups) {
             try {
-                const msg = generateWAMessageFromContent(gid, {
-                    groupStatusMessageV2: { message: inner },
-                    messageContextInfo: { messageSecret: require('crypto').randomBytes(32) }
-                }, { userJid: sock.user.id });
+                const secret = require('crypto').randomBytes(32);
+                require('./../lib/groupStatus').tag(secret);
+                // a normal message, tagged with the secret; lib/groupStatus.js wraps it as a Group Status at send time
+                const msg = generateWAMessageFromContent(gid, { ...inner, messageContextInfo: { messageSecret: secret } }, { userJid: sock.user.id });
                 await sock.relayMessage(gid, msg.message, {
                     messageId: msg.key.id,
                     additionalNodes: [{ tag: 'meta', attrs: { is_group_status: 'true', origin: 'group_status' } }]
@@ -113,7 +113,7 @@ async function togcstatusCommand(sock, chatId, message) {
             }
             await sleep(GAP_MIN + Math.random() * (GAP_MAX - GAP_MIN));
         }
-        await reply(`✅ Group Status sent to ${ok}/${groups.length} groups.` + (failed.length ? `\n⚠️ ${failed.length} failed (see the console).` : '') + (skippedLocked.length ? `\n🔒 Skipped (locked, bot not admin): ${skippedLocked.slice(0, 15).join(', ')}` : '') + '\n\nOpen one group to check that the status appears.')
+        await reply(`✅ Group Status sent to ${ok}/${groups.length} groups.` + (failed.length ? `\n⚠️ ${failed.length} failed (see the console).` : '') + (skippedLocked.length ? `\n🔒 ${skippedLocked.length} locked group(s) skipped (bot is not an admin there).` : '') + '\n\nOpen one group to check that the status appears.')
     } catch (e) {
         console.error('[TOGCSTATUS]', e);
         await reply('❌ Could not post the group status: ' + (e.message || e));

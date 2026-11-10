@@ -3,7 +3,7 @@ const path = require('path');
 const settings = require('../settings');
 const isAdmin = require('../lib/isAdmin');
 const isOwnerOrSudo = require('../lib/isOwner');
-const { chat: groqChat, hasKey } = require('../lib/groq');
+const { chat: groqChat, hasKey, explainError } = require('../lib/groq');
 
 /**
  * JNR-MD - Chat Agent (business assistant)
@@ -21,6 +21,7 @@ const { chat: groqChat, hasKey } = require('../lib/groq');
  *   .agent faq <question> | <answer>
  *   .agent greeting <text>       first reply when a customer just says hi
  *   .agent role <text>           extra instructions
+ *   .agent test <message>        try it yourself (owner messages are ignored)
  *   .agent show                  see everything it knows
  *   .agent forget fact/faq <no>  remove one item        .agent clear facts/faqs
  *   .agent reset                 forget the conversation in this chat
@@ -64,6 +65,7 @@ const isPrivateChat = (jid) => !!jid && (jid.endsWith('@s.whatsapp.net') || jid.
 const history = new Map();       // chatId -> [{ role, content }]
 const ownerActive = new Map();   // chatId -> time you last wrote there
 const lastSeen = new Map();      // chatId -> time of the customer's previous message
+const holdingSent = new Map();    // chatId -> time the 'we got your message' reply was sent
 const replyLog = new Map();      // chatId -> [timestamps]
 
 function pushHistory(chatId, role, content) {
@@ -185,7 +187,6 @@ async function handleAgentMessage(sock, message, text) {
 
         const incoming = String(text || '').replace(/@\d+/g, '').trim();
         if (!incoming) return false;                                                    // voice notes, images, ...
-        if (!hasKey()) { console.error('Agent: GROQ_API_KEY is empty (.env).'); return false; }
         if (rateLimited(chatId)) return true;
 
         const customerName = String(message.pushName || '').trim().split(/\s+/)[0] || '';
@@ -206,9 +207,19 @@ async function handleAgentMessage(sock, message, text) {
         pushHistory(chatId, 'user', isGroup && customerName ? `${customerName}: ${incoming}` : incoming);
         let reply;
         try {
+            if (!hasKey()) throw new Error('no AI key set in .env');
             reply = await groqChat([{ role: 'system', content: systemPrompt(customerName) }, ...history.get(chatId)], { maxTokens: 250, temperature: 0.7 });
         } catch (e) {
-            console.error('Agent AI error:', e.response?.status || e.code || e.message);
+            console.error('Agent AI error:', e.response?.status || e.code || e.message, '- the customer got the holding reply');
+            // The AI is unreachable: do not stay silent. Send one short holding reply (at most once per 2 min per chat)
+            // and alert the owner so a human can answer.
+            if (!isGroup && Date.now() - (holdingSent.get(chatId) || 0) > 2 * 60 * 1000) {
+                holdingSent.set(chatId, Date.now());
+                const hold = `Hello${customerName ? ' ' + customerName : ''}, thanks for your message. We have received it and will get back to you shortly.`;
+                try { await typeAndSend(sock, chatId, hold, null); } catch {}
+                await notifyOwner(sock, chatId, message, incoming, message.pushName);
+                return true;
+            }
             return false;
         }
 
@@ -352,6 +363,16 @@ async function agentCommand(sock, chatId, message) {
     if (sub === 'reset') {
         history.delete(chatId); lastSeen.delete(chatId);
         return reply('♻️ I forgot the conversation in this chat.');
+    }
+    if (sub === 'test') {
+        // The agent ignores the owner's own messages, so this lets you try it: .agent test <customer message>
+        if (!rest) return reply('Use *.agent test <a message a customer might send>*');
+        try {
+            const out = await groqChat([{ role: 'system', content: systemPrompt('') }, { role: 'user', content: rest }], { maxTokens: 250, temperature: 0.7 });
+            return reply(humanize(out.split(HUMAN_TAG).join('')).slice(0, 700) || '(empty answer)');
+        } catch (e) {
+            return reply('❌ The agent could not get an AI answer:\n' + explainError(e));
+        }
     }
     if (sub === 'show' || sub === 'status') {
         const on = isEnabledFor(chatId);

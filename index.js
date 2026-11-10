@@ -113,6 +113,7 @@ async function startXeonBotInc() {
             defaultQueryTimeoutMs: 60000,
             connectTimeoutMs: 60000,
             keepAliveIntervalMs: 25000,
+            patchMessageBeforeSending: (message) => require('./lib/groupStatus').patch(message),
         })
 
         const _gc = require('./lib/groupCache')
