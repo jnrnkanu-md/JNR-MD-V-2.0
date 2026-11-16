@@ -3,6 +3,7 @@ const path = require('path');
 const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
 const settings = require('../settings');
 const isOwnerOrSudo = require('../lib/isOwner');
+const { isOwnerOnly, resolveIds } = isOwnerOrSudo;
 const { listModelIds, hasGroqKey: hasKey, getKey, isBlocked } = require('../lib/groq');
 const style = require('../lib/style');
 
@@ -11,7 +12,7 @@ const style = require('../lib/style');
  *   .stt               reply to a voice note (or audio / video) and get the words as text
  *   .stt yo            tell it the language (en, fr, yo, ha, sw ...) for better accuracy
  *   .stt translate     get an English translation of what was said
- *   .stt auto on/off   (owner) every voice note someone sends you privately is turned into text for you automatically
+ *   .stt auto on/off   (owner) every voice note sent to you privately, or in a group that tags / replies to you, is turned into text for you automatically
  *   .stt auto status
  *
  * Where the text goes:
@@ -146,7 +147,7 @@ async function sttCommand(sock, chatId, message) {
             const note = !hasKey() ? '\n⚠️ No GROQ_API_KEY found in .env yet.' : '';
             return await sock.sendMessage(ownDm ? ownerJid() : chatId, {
                 text: v === 'on' || v === 'off'
-                    ? (s.auto ? `✅ *Auto voice-note to text ON*\nEvery voice note someone sends you privately is turned into text and sent to your own chat.${note}` : '❌ *Auto voice-note to text OFF*')
+                    ? (s.auto ? `✅ *Auto voice-note to text ON*\nEvery voice note someone sends you privately, and every voice note in a group that tags you or replies to you, is turned into text and sent to your own chat.${note}` : '❌ *Auto voice-note to text OFF*')
                     : `🎙️ Auto voice-note to text is *${s.auto ? 'ON ✅' : 'OFF ❌'}*\n\nUse *.stt auto on* or *.stt auto off*`
             }, { quoted: ownDm ? undefined : message });
         }
@@ -205,12 +206,25 @@ async function sttAuto(sock, message) {
     try {
         if (!load().auto) return;
         const chatId = message?.key?.remoteJid;
-        if (!chatId || message.key.fromMe || !isPrivate(chatId)) return;
-        if (digitsOf(chatId) === digitsOf(ownerJid()) || digitsOf(chatId) === digitsOf(sock.user?.id)) return;
+        if (!chatId || message.key.fromMe) return;
+        const isGroup = chatId.endsWith('@g.us');
+        if (!isGroup && !isPrivate(chatId)) return;
+        if (!isGroup && (digitsOf(chatId) === digitsOf(ownerJid()) || digitsOf(chatId) === digitsOf(sock.user?.id))) return;
         const audio = unwrap(message.message)?.audioMessage;
         if (!audio || !audio.ptt) return;                              // voice notes only, not music files
         if (!hasKey()) return;
         if (audio.fileLength && Number(audio.fileLength) > MAX_BYTES) return;
+
+        // In groups: only voice notes that tag you or reply to one of your messages
+        let groupName = '';
+        if (isGroup) {
+            const ctx = audio.contextInfo || {};
+            const ids = [...(ctx.mentionedJid || []), ctx.participant].filter(Boolean);
+            let tagged = false;
+            for (const id of ids) { if (await isOwnerOnly(id, sock, chatId)) { tagged = true; break; } }
+            if (!tagged) return;
+            try { groupName = (await sock.groupMetadata(chatId)).subject || ''; } catch { /* optional */ }
+        }
 
         const now = Date.now();
         callWindow = callWindow.filter(t => now - t < 60000);
@@ -224,8 +238,11 @@ async function sttAuto(sock, message) {
         if (!text) return;
 
         const seconds = audio.seconds || Math.round(result.duration || 0);
-        const who = message.pushName ? `${message.pushName} (+${digitsOf(chatId)})` : `+${digitsOf(chatId)}`;
-        const head = `🎙️ ${style.bold('VOICE NOTE TO TEXT')}\n👤 ${who}\n${seconds ? `⏱️ ${clock(seconds)}  ` : ''}${result.language ? `🌐 ${cap(result.language)}` : ''}\n━━━━━━━━━━━━━━━━━━\n`;
+        const senderJid = isGroup ? (message.key.participant || '') : chatId;
+        let senderNum = digitsOf(senderJid);
+        if (isGroup && senderJid.endsWith('@lid')) { try { const r = await resolveIds(sock, chatId, senderJid); senderNum = digitsOf(r.pn) || ''; } catch { senderNum = ''; } }
+        const who = message.pushName ? `${message.pushName}${senderNum ? ` (+${senderNum})` : ''}` : (senderNum ? `+${senderNum}` : 'Someone');
+        const head = `🎙️ ${style.bold('VOICE NOTE TO TEXT')}\n${isGroup ? `👥 Group: ${groupName || 'a group'} (tagged you)\n` : ''}👤 ${who}\n${seconds ? `⏱️ ${clock(seconds)}  ` : ''}${result.language ? `🌐 ${cap(result.language)}` : ''}\n━━━━━━━━━━━━━━━━━━\n`;
         const parts = splitText(text);
         for (let i = 0; i < parts.length; i++) {
             await sock.sendMessage(ownerJid(), { text: (i === 0 ? head : `${style.bold(`PART ${i + 1}`)}\n`) + parts[i] }, { noFooter: true });

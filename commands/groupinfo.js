@@ -1,53 +1,58 @@
+const style = require('../lib/style');
+
+/**
+ * .groupinfo / .infogp : the group's picture with its description and the important details.
+ * Nobody is tagged, so no one gets a notification.
+ */
+const num = (j) => String(j || '').split('@')[0].split(':')[0];
+
 async function groupInfoCommand(sock, chatId, msg) {
     try {
-        // Get group metadata
-        const groupMetadata = await sock.groupMetadata(chatId);
-        
-        // Get group profile picture
-        let pp;
-        try {
-            pp = await sock.profilePictureUrl(chatId, 'image');
-        } catch {
-            pp = 'https://i.imgur.com/2wzGhpF.jpeg'; // Default image
+        if (!chatId.endsWith('@g.us')) {
+            return await sock.sendMessage(chatId, { text: '❌ This command works in groups only.' }, { quoted: msg });
         }
+        const md = await sock.groupMetadata(chatId);
+        const people = md.participants || [];
+        const admins = people.filter(p => p.admin);
 
-        // Get admins from participants
-        const participants = groupMetadata.participants;
-        const groupAdmins = participants.filter(p => p.admin);
-        const listAdmin = groupAdmins.map((v, i) => `${i + 1}. @${v.id.split('@')[0]}`).join('\n');
-        
-        // Get group owner
-        const owner = groupMetadata.owner || groupAdmins.find(p => p.admin === 'superadmin')?.id || chatId.split('-')[0] + '@s.whatsapp.net';
+        // owner: shown as a plain number (when WhatsApp gives a phone number)
+        const ownerRaw = md.ownerPn || md.owner || admins.find(p => p.admin === 'superadmin')?.phoneNumber || admins.find(p => p.admin === 'superadmin')?.id || '';
+        const ownerShown = ownerRaw && !String(ownerRaw).endsWith('@lid') ? `+${num(ownerRaw)}` : '';
 
-        // Create info text
-        const text = `
-┌──「 *INFO GROUP* 」
-▢ *♻️ID:*
-   • ${groupMetadata.id}
-▢ *🔖NAME* : 
-• ${groupMetadata.subject}
-▢ *👥Members* :
-• ${participants.length}
-▢ *🤿Group Owner:*
-• @${owner.split('@')[0]}
-▢ *🕵🏻‍♂️Admins:*
-${listAdmin}
+        const created = md.creation ? new Date(Number(md.creation) * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+        const desc = String(md.desc || '').trim();
 
-▢ *📌Description* :
-   • ${groupMetadata.desc?.toString() || 'No description'}
-`.trim();
+        // invite link: WhatsApp only gives it to a group admin, so the bot must be an admin
+        let link = '';
+        try { const code = await sock.groupInviteCode(chatId); if (code) link = `https://chat.whatsapp.com/${code}`; } catch { /* bot is not an admin */ }
 
-        // Send the message with image and mentions
-        await sock.sendMessage(chatId, {
-            image: { url: pp },
-            caption: text,
-            mentions: [...groupAdmins.map(v => v.id), owner]
-        });
+        const lines = [
+            `👥 ${style.bold('GROUP INFO')}`,
+            '━━━━━━━━━━━━━━━━━━',
+            `*Name:* ${md.subject}`,
+            `*Members:* ${people.length}`,
+            `*Admins:* ${admins.length}`,
+            ...(ownerShown ? [`*Created by:* ${ownerShown}`] : []),
+            ...(created ? [`*Created:* ${created}`] : []),
+            `*Who can send messages:* ${md.announce ? 'Admins only 🔒' : 'Everyone'}`,
+            `*Who can edit group info:* ${md.restrict ? 'Admins only' : 'Everyone'}`,
+            ...(md.joinApprovalMode ? ['*Join approval:* On'] : []),
+            `🖇️ *Group link:* ${link || 'not available (make the bot an admin to show it)'}`,
+            '',
+            `📌 ${style.bold('DESCRIPTION')}`,
+            desc || 'No description'
+        ];
+        const caption = lines.join('\n').slice(0, 3500);
 
+        let pp = null;
+        try { pp = await sock.profilePictureUrl(chatId, 'image'); } catch { /* group has no picture */ }
+
+        if (pp) await sock.sendMessage(chatId, { image: { url: pp }, caption }, { quoted: msg });
+        else await sock.sendMessage(chatId, { text: caption }, { quoted: msg });
     } catch (error) {
         console.error('Error in groupinfo command:', error);
-        await sock.sendMessage(chatId, { text: 'Failed to get group info!' });
+        await sock.sendMessage(chatId, { text: '❌ Could not get the group info right now. Please try again.' }, { quoted: msg });
     }
 }
 
-module.exports = groupInfoCommand; 
+module.exports = groupInfoCommand;
