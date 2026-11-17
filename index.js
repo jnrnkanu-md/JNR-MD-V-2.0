@@ -169,6 +169,15 @@ async function startXeonBotInc() {
                     return
                 }
 
+                // 🔤 No-prefix mode: lets the OWNER type "menu" instead of ".menu" (see lib/noPrefix.js)
+                try {
+                    const _np = require('./lib/noPrefix')
+                    if (_np.isOn()) {
+                        const _sender = mek.key.participant || mek.key.remoteJid
+                        if (mek.key.fromMe || await require('./lib/isOwner').isOwnerOnly(_sender, XeonBotInc, mek.key.remoteJid)) _np.apply(mek)
+                    }
+                } catch {}
+
                 // 🚫 Anti Group Status: delete group status posts where an admin switched it on
                 try { if (mek.key.remoteJid.endsWith('@g.us')) await require('./lib/antiGcStatus').handle(XeonBotInc, mek) } catch {}
 

@@ -54,7 +54,7 @@ const MENUS = {
         icon: '👑', names: ['admin', 'admins', 'owner', 'owners'],
         boxes: [
             { title: '👑 ADMIN (OWNER)', lines: [
-                '.mode <public/private>', '.settings', '.update', '.sudo', '.setprefix', '.setbotname', '.setprofilename',
+                '.mode <public/private>', '.settings', '.update', '.sudo', '.setprefix', '.noprefix on / off', '.setbotname', '.setprofilename',
                 '.setmenuimage', '.setpp', '.clearsession', '.cleartmp', '.antidelete', '.antiviewonce',
                 '.autoreact / .areact', '.autostatus', '.autostatus react', '.autotyping', '.autoread', '.anticall',
                 '.pmblocker', '.mention', '.setmention', '.adminalert <on/off>', '.tostatus', '.togcstatus / .gcstatus', '.dltest'
