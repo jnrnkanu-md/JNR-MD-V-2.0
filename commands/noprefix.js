@@ -14,5 +14,6 @@ module.exports = async function noprefixCommand(sock, chatId, message) {
     const note = arg === 'on' || arg === 'off'
         ? (on ? '✅ *No-prefix mode ON* (for you only).\nType a command name without the dot, e.g. *menu* or *kick @user*. Everyone else still needs the prefix.' : '❌ *No-prefix mode OFF.*')
         : `No-prefix mode is *${on ? 'ON ✅' : 'OFF ❌'}*.\n\nUse *.noprefix on* or *.noprefix off*`;
-    return sock.sendMessage(chatId, { text: note }, { quoted: message });
+    const i = noPrefix.info();
+    return sock.sendMessage(chatId, { text: note + `\n\n_Prefix in use: ${i.prefix}  |  commands known: ${i.known}_` }, { quoted: message });
 };

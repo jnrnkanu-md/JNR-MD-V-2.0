@@ -176,7 +176,7 @@ async function startXeonBotInc() {
                         const _sender = mek.key.participant || mek.key.remoteJid
                         if (mek.key.fromMe || await require('./lib/isOwner').isOwnerOnly(_sender, XeonBotInc, mek.key.remoteJid)) _np.apply(mek)
                     }
-                } catch {}
+                } catch (e) { console.error('noprefix hook:', e.message) }
 
                 // 🚫 Anti Group Status: delete group status posts where an admin switched it on
                 try { if (mek.key.remoteJid.endsWith('@g.us')) await require('./lib/antiGcStatus').handle(XeonBotInc, mek) } catch {}
